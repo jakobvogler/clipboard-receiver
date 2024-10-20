@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <script src="./lib/qr-scanner.umd.min.js"></script>
+  <script>
+    const startTime = "{{START_TIME}}"
+    
+    let token
+    
+    function updatePrimaryButton() {
+      const button = document.getElementById("primaryButton")
+      button.innerText = "Send Clipboard"
+      button.onclick = sendClipboard
+    }
+
+    function getToken() {
+      const tokenString = localStorage.getItem("token")
+      let tokenInfo
+
+      try {
+        tokenInfo = JSON.parse(tokenString)
+      } catch (e) {}
+
+      if (!tokenInfo || tokenInfo.startTime !== startTime) {
+        return undefined
+      }
+
+      token = tokenInfo.token
+    }
+
+    function setToken(tokenValue) {
+      token = tokenValue
+      localStorage.setItem("token", JSON.stringify({token, startTime}))
+    }
+    
+    function register() {
+      const videoElem = document.getElementById("tokenCapture")
+
+      let qrScanner
+
+      qrScanner = new QrScanner(
+        videoElem,
+        (result) => {
+          if (!result?.data) {
+            return
+          }
+
+          qrScanner.stop()
+          qrScanner.destroy()
+          qrScanner = null
+          
+          setToken(result.data)
+          
+          fetch("/api/register", {
+            method: "POST",
+            body: JSON.stringify({
+              token: token,
+            }),
+          })
+          
+          updatePrimaryButton()
+        },
+        {
+          returnDetailedScanResult: true,
+          preferredCamera: "environment",
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+        }
+      )
+
+      qrScanner.setInversionMode("both");
+      qrScanner.start()
+    }
+
+    async function sendClipboard() {
+      const clipboard = await navigator.clipboard.readText()
+      await fetch("/api/data", {
+        method: "POST",
+        body: JSON.stringify({
+          token: token,
+          clipboard: clipboard,
+        }),
+      })
+    }
+  </script>
+
+  <body>
+    <div style="display: flex; flex-direction: row; justify-content: center; margin-top: 48px;">
+      <video id="tokenCapture" style="border-radius: 24px;"></video>
+    </div>
+
+    <button
+      id="primaryButton"
+      style="position: absolute; bottom: 48px; left: 36px; right: 36px; border: none; border-radius: 24px; background-color: mediumorchid; padding: 36px; color: white; font-size: 56px; font-weight: 600;"
+      onclick="register()"
+    >
+      Scan QR Code
+    </button>
+  </body>
+
+  <script>
+    getToken()
+
+    if (token) {
+      updatePrimaryButton()
+    }
+  </script>
+</html>
