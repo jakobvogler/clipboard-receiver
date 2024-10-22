@@ -1,4 +1,4 @@
-module ender-chest
+module clipboard-server
 
 go 1.23
 
