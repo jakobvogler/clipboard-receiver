@@ -2,13 +2,13 @@ package main
 
 import (
 	"crypto/rand"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"math/big"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -24,7 +24,7 @@ var (
 	port                        = 4999
 )
 
-// TODO: cli arguments, build
+// TODO: cli arguments
 
 func main() {
 	domain := "localhost"
@@ -49,33 +49,27 @@ func main() {
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
-func handleLib(w http.ResponseWriter, req *http.Request) {
-	file, err := os.ReadFile("./html/lib/qr-scanner.umd.min.js")
-	if err != nil {
-		log.Fatal(err)
-	}
+//go:embed html/lib/qr-scanner.umd.min.js
+var libFile []byte
 
+func handleLib(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", "application/javascript")
-	w.Write(file)
+	w.Write(libFile)
 }
+
+//go:embed html/lib/qr-scanner-worker.min.js
+var libWorkerFile []byte
 
 func handleLibWorker(w http.ResponseWriter, req *http.Request) {
-	file, err := os.ReadFile("./html/lib/qr-scanner-worker.min.js")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	w.Header().Add("Content-Type", "application/javascript")
-	w.Write(file)
+	w.Write(libWorkerFile)
 }
 
-func handleDashboard(w http.ResponseWriter, req *http.Request) {
-	file, err := os.ReadFile("./html/dashboard.html")
-	if err != nil {
-		log.Fatal(err)
-	}
+//go:embed html/dashboard.html
+var dashboardFile []byte
 
-	hydrated := strings.ReplaceAll(string(file), "{{START_TIME}}", startTime.Format(time.RFC3339))
+func handleDashboard(w http.ResponseWriter, req *http.Request) {
+	hydrated := strings.ReplaceAll(string(dashboardFile), "{{START_TIME}}", startTime.Format(time.RFC3339))
 
 	w.Write(([]byte)(hydrated))
 	printTransferTokenCode()
