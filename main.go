@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	_ "embed"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -24,11 +25,12 @@ var (
 	port                        = 4999
 )
 
-// TODO: cli arguments
-
 func main() {
-	domain := "localhost"
-	pageLink := fmt.Sprintf("https://%s", domain)
+	urlPtr := flag.String("url", "localhost", "Your tunnel url.")
+	flag.IntVar(&port, "port", 4999, "The port the server should run on, default is 4999.")
+	flag.Parse()
+
+	pageLink := fmt.Sprintf("https://%s", *urlPtr)
 
 	pageLinkCode, err := qrcode.New(pageLink, qrcode.High)
 	if err != nil {
