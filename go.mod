@@ -1,4 +1,4 @@
-module clipboard-server
+module clipboard-receiver
 
 go 1.23
 
